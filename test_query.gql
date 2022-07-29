@@ -1,0 +1,26 @@
+query($after_cursor: String, $login: String!) {
+  organization(login: $login) {
+    name
+    teams(first: 5, after: $after_cursor) {
+      totalCount
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      edges {
+        node {
+          name
+          members(first: 100) {
+            totalCount
+            edges {
+              role
+              node {
+                login
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

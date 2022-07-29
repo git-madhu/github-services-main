@@ -1,0 +1,21 @@
+query($org_name: String!) {
+  organization(login: $org_name) {
+    samlIdentityProvider {
+      externalIdentities(first: 100) {
+        totalCount
+        nodes {
+          user {
+            login
+          }
+          samlIdentity {
+            nameId
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+}

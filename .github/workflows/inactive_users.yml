@@ -1,0 +1,102 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Fetching Inactive Users
+on: 
+  workflow_dispatch:
+    inputs:
+      date:
+        type: text
+        description: From date
+        default: "2021-11-01"
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Ruby
+        # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
+        # change this to (see https://github.com/ruby/setup-ruby#versioning) :
+        # uses: ruby/setup-ruby@V1
+        uses: ruby/setup-ruby@473e4d8fe5dd94ee328fdfca9f8c9c7afc9dae5e
+        with:
+          ruby-version: 3.0
+          bundler-cache: true # runs "bundle install' and caches installed gems automatically
+
+      - name: Install Octokit
+        run: gem install octokit
+
+      - name: Run report
+        id: report_output
+        run: ruby inactive_members_report.rb -o MYDEVVKR -d ${{ github.event.inputs.date }}
+        env:
+          OCTOKIT_ACCESS_TOKEN: ${{ secrets.MYDEVVKR_PAT }}
+
+      - name: Print filename
+        run: "echo 'Run report output: ${{ steps.report_output.outputs }}'"
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+        # Artifact name
+          name: Inactive Members Report
+          # A file, directory or wildcard pattern that describes what to upload
+          path: reports/*.csv
+
+      - name: Fetch SAML Identity
+        env: # Or as an environment variable
+          my_token: ${{ secrets.MYDEVVKR_PAT }}
+        run: |
+          chmod +x saml_identity.sh
+          ./saml_identity.sh
+
+      - name: Merge email with inactive user list
+        run: |
+          python3 --version
+          python3 merge_report.py
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: Inactive Members with EMAIL
+          path: reports/*-merged.csv
+
+      - name: Send mail
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # Required mail server address:
+          server_address: smtp.gmail.com
+          # Required mail server port:
+          server_port: 465
+          # Optional (recommended): mail server username:
+          username: ${{secrets.MAIL_USERNAME}}
+          # Optional (recommended) mail server password:
+          password: ${{secrets.MAIL_PASSWORD}}
+          # Required mail subject:
+          subject: Github Actions job result
+          # Required recipients' addresses:
+          to: vipin.hbti.in@gmail.com,srk.was@gmail.com
+          # Required sender full name (address can be skipped):
+          from: Vipin.Kumar # <user@example.com>
+          # Optional whether this connection use TLS (default is true if server_port is 465)
+          secure: true
+          # Optional plain body:
+          body: Build job of ${{github.repository}} completed successfully!
+          # Optional HTML body read from file:
+          html_body: file://README.html
+          # Optional carbon copy recipients:
+          cc: vipin.hbti.in@gmail.com
+          # Optional blind carbon copy recipients:
+          bcc: vipin.hbti.in@gmail.com
+          # Optional recipient of the email response:
+          reply_to: vipin.hbti.in@gmail.com
+          # Optional Message ID this message is replying to:
+          in_reply_to: ""
+          # Optional unsigned/invalid certificates allowance:
+          ignore_cert: true
+          # Optional converting Markdown to HTML (set content_type to text/html too):
+          convert_markdown: true
+          # Optional attachments:
+          attachments: ""
+          # Optional priority: 'high', 'normal' (default) or 'low'
+          priority: low
