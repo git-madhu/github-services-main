@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Scanning Alerts
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a set of commands using the runners shell
+      - name: Fetch all security scanning allerts for organization eidikodev
+        env: # Or as an environment variable
+          github_token: ${{ secrets.LOCAL_PAT }}
+        run: |
+          chmod +x scanning_alerts.sh
+          ./scanning_alerts.sh
+
+      - name: Upload Scanned alerts by repo name
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          # Artifact name
+          name: codescan_alert.csv
+          path: codescan_alert.csv
+          
+      # - name: Merge email with team wise user list
+      #   run: |
+      #     python3 --version
+      #     python3 merge_email.py
+
+      # - name: Upload a Build Artifact
+      #   uses: actions/upload-artifact@v2.2.4
+      #   with:
+      #     name: Team wise users list with email
+      #     path: user_list_by_team_merged.csv
